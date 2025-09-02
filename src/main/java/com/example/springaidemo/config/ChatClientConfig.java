@@ -1,16 +1,26 @@
 package com.example.springaidemo.config;
 
+import com.example.springaidemo.advisors.TokenUsageAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 @Configuration
 public class ChatClientConfig {
     @Bean
     public ChatClient chatClient(ChatClient.Builder chatClientBuilder){
+        ChatOptions chatOptions = ChatOptions
+                .builder()
+//                .model("ai/gemma3:270M-F16")
+                .maxTokens(100)
+                .temperature(0.8).build();
         return chatClientBuilder
-                .defaultAdvisors(new SimpleLoggerAdvisor())
+                .defaultOptions(chatOptions)
+                .defaultAdvisors(List.of(new SimpleLoggerAdvisor(), new TokenUsageAdvisor()))
                 .defaultSystem("""
                         You are an internal HR assistant. Your role is to help \s
                         employees with questions related to HR policies, such as \s
