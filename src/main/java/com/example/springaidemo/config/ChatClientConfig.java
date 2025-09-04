@@ -4,6 +4,7 @@ import com.example.springaidemo.advisors.TokenUsageAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -12,7 +13,7 @@ import java.util.List;
 @Configuration
 public class ChatClientConfig {
     @Bean
-    public ChatClient chatClient(ChatClient.Builder chatClientBuilder){
+    public ChatClient chatClient( ChatClient.Builder chatClientBuilder){
         ChatOptions chatOptions = ChatOptions
                 .builder()
 //                .model("ai/gemma3:270M-F16")
