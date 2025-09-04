@@ -17,42 +17,34 @@ import org.springframework.core.io.Resource;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Configuration
 public class RagConfig {
     private static final Logger log = LoggerFactory.getLogger(RagConfig.class);
 
+    private final String vectorStoreName = "vectorstore.json";
+
     @Value("classpath:/docs/prompt.txt")
     private Resource faq;
 
-    @Value("vectorstore.json")
-    private String vectorStoreName;
-
     @Bean
-    SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel){
+    SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
         SimpleVectorStore simpleVectorStore = SimpleVectorStore.builder(embeddingModel).build();
-        var vectorStoreFile = getVectorStoreFile();
-        if (vectorStoreFile.exists()) {
-            log.info("Vector Store File Exists,");
-            simpleVectorStore.load(vectorStoreFile);
-        } else {
-            log.info("Vector Store File Does Not Exist, loading documents");
-            TextReader textReader = new TextReader(faq);
-            textReader.getCustomMetadata().put("filename", "prompt.txt");
-            List<Document> documents = textReader.get();
-            TextSplitter textSplitter = new TokenTextSplitter();
-            List<Document> splitDocuments = textSplitter.apply(documents);
-            simpleVectorStore.add(splitDocuments);
-            simpleVectorStore.save(vectorStoreFile);
-        }
+        getVectorStoreFile();
         return simpleVectorStore;
     }
 
     private File getVectorStoreFile() {
         Path path = Paths.get("src", "main", "resources", "data");
-        String absolutePath = path.toFile().getAbsolutePath() + "/" + vectorStoreName;
+        File directory = path.toFile();
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        String absolutePath = directory.getAbsolutePath() + "/" + vectorStoreName;
         return new File(absolutePath);
     }
 }

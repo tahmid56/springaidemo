@@ -17,6 +17,8 @@ import org.springframework.web.client.RestTemplate;
 import jakarta.annotation.PostConstruct;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -27,6 +29,7 @@ public class RandomDataLoader {
     private static final Logger log = LoggerFactory.getLogger(RandomDataLoader.class);
     private final SimpleVectorStore vectorStore;
     private final File vectorStoreFile;
+    private final String vectorStoreName = "vectorstore.json";
 
     public RandomDataLoader(SimpleVectorStore vectorStore) {
         this.vectorStore = vectorStore;
@@ -102,6 +105,12 @@ public class RandomDataLoader {
     }
 
     private File getVectorStoreFile() {
-        return new File("vectorstore.json"); // or whatever path you want
+        Path path = Paths.get("src", "main", "resources", "data");
+        File directory = path.toFile();
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+        String absolutePath = directory.getAbsolutePath() + "/" + vectorStoreName;
+        return new File(absolutePath);
     }
 }
