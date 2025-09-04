@@ -28,20 +28,17 @@ import java.util.stream.Collectors;
 public class RandomDataLoader {
     private static final Logger log = LoggerFactory.getLogger(RandomDataLoader.class);
     private final SimpleVectorStore vectorStore;
-    private final File vectorStoreFile;
-    private final String vectorStoreName = "vectorstore.json";
 
+    File vectorStoreFile = new File("src/main/resources/data/vectorstore.json");
     public RandomDataLoader(SimpleVectorStore vectorStore) {
         this.vectorStore = vectorStore;
-        this.vectorStoreFile = getVectorStoreFile();
+
     }
 
     @PostConstruct
     public void loadSentencesIntoVectorStore() {
-        if (vectorStoreFile.exists()) {
-            log.info("Data already loaded in vector store. Skipping...");
-            return;
-        }
+
+
         List<String> sentences = List.of(
                 "Java is used for building scalable enterprise applications.",
                 "Python is commonly used for machine learning and automation tasks.",
@@ -101,16 +98,8 @@ public class RandomDataLoader {
 
         List<Document> documents = sentences.stream().map(Document::new).collect(Collectors.toList());
         vectorStore.add(documents);
-        vectorStore.save(vectorStoreFile);
+        vectorStore.save(new File(vectorStoreFile.getAbsolutePath()));
     }
 
-    private File getVectorStoreFile() {
-        Path path = Paths.get("src", "main", "resources", "data");
-        File directory = path.toFile();
-        if (!directory.exists()) {
-            directory.mkdirs();
-        }
-        String absolutePath = directory.getAbsolutePath() + "/" + vectorStoreName;
-        return new File(absolutePath);
-    }
+
 }

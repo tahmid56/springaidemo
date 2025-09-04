@@ -20,8 +20,8 @@ public class HRPolicyLoader {
     private final SimpleVectorStore vectorStore;
     @Value("classpath:HR_Policies.pdf")
     Resource policyFile;
-    private final String vectorStoreName = "vectorstore.json";
 
+    File vectorStoreFile = new File("src/main/resources/data/vectorstore.json");
 
     public HRPolicyLoader(SimpleVectorStore simpleVectorStore) {
         this.vectorStore = simpleVectorStore;
@@ -36,5 +36,6 @@ public class HRPolicyLoader {
         TextSplitter textSplitter = TokenTextSplitter.builder().withChunkSize(100).withMaxNumChunks(400).build();
 
         vectorStore.add(textSplitter.split(docs));
+        vectorStore.save(new File(vectorStoreFile.getAbsolutePath()));
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -28,13 +29,20 @@ public class RagConfig {
 
     private final String vectorStoreName = "vectorstore.json";
 
-    @Value("classpath:/docs/prompt.txt")
-    private Resource faq;
+
 
     @Bean
-    SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel) {
+    SimpleVectorStore simpleVectorStore(EmbeddingModel embeddingModel) throws IOException {
         SimpleVectorStore simpleVectorStore = SimpleVectorStore.builder(embeddingModel).build();
-        getVectorStoreFile();
+        File vectorStoreFile = getVectorStoreFile();
+        try {
+            boolean created = vectorStoreFile.createNewFile();
+            if (created) {
+                log.info("Created vector store file at {}", vectorStoreFile.getAbsolutePath());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to create vector store file", e);
+        }
         return simpleVectorStore;
     }
 
