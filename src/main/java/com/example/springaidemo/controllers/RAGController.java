@@ -2,6 +2,7 @@ package com.example.springaidemo.controllers;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,12 +19,12 @@ import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 @RequestMapping("/api/rag")
 public class RAGController {
     private final ChatClient chatClient;
-    private final VectorStore vectorStore;
+    private final SimpleVectorStore vectorStore;
 
     @Value("classpath:/promptTemplates/systemPromptRandomDataTemplate.st")
     Resource promptTemplate;
 
-    public RAGController(@Qualifier("ChatMemoryChatClient") ChatClient chatClient, VectorStore vectorStore) {
+    public RAGController(@Qualifier("ChatMemoryChatClient") ChatClient chatClient, SimpleVectorStore vectorStore) {
         this.chatClient = chatClient;
         this.vectorStore = vectorStore;
     }

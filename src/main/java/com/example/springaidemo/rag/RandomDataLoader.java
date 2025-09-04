@@ -4,6 +4,7 @@
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -14,6 +15,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import jakarta.annotation.PostConstruct;
+
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -22,22 +25,20 @@ import java.util.stream.Collectors;
 @Component
 public class RandomDataLoader {
     private static final Logger log = LoggerFactory.getLogger(RandomDataLoader.class);
-    private final VectorStore vectorStore;
-    private final RestTemplate restTemplate;
+    private final SimpleVectorStore vectorStore;
+    private final File vectorStoreFile;
 
-    @Value("${spring.ai.qdrant.host:http://localhost:6333}")
-    private String qdrantHost;
-
-    @Value("${spring.ai.qdrant.collection-name:my_collection}")
-    private String collectionName;
-
-    public RandomDataLoader(VectorStore vectorStore) {
+    public RandomDataLoader(SimpleVectorStore vectorStore) {
         this.vectorStore = vectorStore;
-        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
+        this.vectorStoreFile = getVectorStoreFile();
     }
 
     @PostConstruct
     public void loadSentencesIntoVectorStore() {
+        if (vectorStoreFile.exists()) {
+            log.info("Data already loaded in vector store. Skipping...");
+            return;
+        }
         List<String> sentences = List.of(
                 "Java is used for building scalable enterprise applications.",
                 "Python is commonly used for machine learning and automation tasks.",
@@ -95,42 +96,12 @@ public class RandomDataLoader {
                 "SWOT analysis identifies strengths, weaknesses, opportunities, and threats."
         );
 
-        try {
-            // Delete all documents by dropping and recreating the collection
-            deleteAllDocuments();
-
-            // Create documents with valid UUIDs
-            List<Document> documents = sentences.stream()
-                    .map(sentence -> new Document(UUID.randomUUID().toString(), sentence, Collections.emptyMap()))
-                    .collect(Collectors.toList());
-
-            // Add new documents to the vector store
-            vectorStore.add(documents);
-            log.info("Loaded {} documents into the vector store.", documents.size());
-        } catch (Exception e) {
-            log.error("Failed to load documents into vector store", e);
-            throw e;
-        }
+        List<Document> documents = sentences.stream().map(Document::new).collect(Collectors.toList());
+        vectorStore.add(documents);
+        vectorStore.save(vectorStoreFile);
     }
 
-    private void deleteAllDocuments() {
-        try {
-            // Drop the collection
-            String dropUrl = qdrantHost + "/collections/" + collectionName;
-            restTemplate.delete(dropUrl);
-            log.info("Dropped Qdrant collection: {}", collectionName);
-
-            // Recreate the collection with the correct configuration
-            String createUrl = qdrantHost + "/collections/" + collectionName;
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            String payload = "{\"vectors\": {\"size\": 768, \"distance\": \"Cosine\"}}";
-            HttpEntity<String> request = new HttpEntity<>(payload, headers);
-            restTemplate.put(createUrl, request);
-            log.info("Recreated Qdrant collection: {}", collectionName);
-        } catch (Exception e) {
-            log.error("Failed to drop and recreate Qdrant collection: {}", collectionName, e);
-            throw e;
-        }
+    private File getVectorStoreFile() {
+        return new File("vectorstore.json"); // or whatever path you want
     }
 }
