@@ -9,6 +9,9 @@ import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.chat.memory.repository.jdbc.JdbcChatMemoryRepository;
 import org.springframework.ai.chat.prompt.ChatOptions;
+import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
+import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,12 +27,30 @@ public class ChatMemoryChatClientBuilder {
     }
 
     @Bean("ChatMemoryChatClient")
-    public ChatClient chatClient(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory){
+    public ChatClient chatClientWithoutRAA(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory){
         Advisor advisor = new SimpleLoggerAdvisor();
         Advisor tokenAdvisor = new TokenUsageAdvisor();
         Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
         return chatClientBuilder
                 .defaultAdvisors(List.of(advisor, memoryAdvisor, tokenAdvisor))
                 .build();
+    }
+
+    @Bean("ChatMemoryChatClientRetrievalAugmentationAdvisor")
+    public ChatClient chatClientWithRAA(ChatClient.Builder chatClientBuilder, ChatMemory chatMemory, RetrievalAugmentationAdvisor retrievalAugmentationAdvisor){
+        Advisor advisor = new SimpleLoggerAdvisor();
+        Advisor tokenAdvisor = new TokenUsageAdvisor();
+        Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+        return chatClientBuilder
+                .defaultAdvisors(List.of(advisor, memoryAdvisor, tokenAdvisor, retrievalAugmentationAdvisor))
+                .build();
+    }
+
+    @Bean
+    RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(SimpleVectorStore simpleVectorStore){
+        return RetrievalAugmentationAdvisor.builder().documentRetriever(
+                VectorStoreDocumentRetriever.builder().vectorStore(simpleVectorStore)
+                        .topK(3).similarityThreshold(0.5).build()
+        ).build();
     }
 }
